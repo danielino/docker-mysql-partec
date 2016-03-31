@@ -36,6 +36,13 @@ get_last_octet_from_ip(){
 		echo ${ip//*./}
 }
 
+get_unique_server_id(){
+	#it's based on macaddr
+	hwaddr=$(ip link show  |grep link  | head -2 | tail -1 | awk '{print $2}')
+	hwaddr_md5_only_char=$(echo $hwaddr | md5sum | sed 's/[a-Z]//g' | awk '{print $1}')
+	echo $hwaddr_md5_only_char | awk '{print substr($1,1,3)}'
+}
+
 get_ip(){
 		local ip=$(ip r l scope link)
 		echo ${ip//*src /}
@@ -251,7 +258,7 @@ EOSQL
 	fi
 fi
 
-DEF_ARGS="--user=mysql --server-id=$(get_last_octet_from_ip) --log-bin=master-bin --relay-log=master-relay-bin --log-slave-updates --relay-log-recovery=1 --master-info-repository=TABLE --relay-log-info-repository=TABLE --gtid-mode=ON --enforce-gtid-consistency --report-host=master --explicit-defaults-for-timestamp --innodb-log-file-size=5M"
+DEF_ARGS="--user=mysql --server-id=$(get_unique_server_id) --log-bin=master-bin --relay-log=master-relay-bin --log-slave-updates --relay-log-recovery=1 --master-info-repository=TABLE --relay-log-info-repository=TABLE --gtid-mode=ON --enforce-gtid-consistency --report-host=master --explicit-defaults-for-timestamp --innodb-log-file-size=5M"
 if [ $MYSQL_SLAVE_PORT -gt 0 ]; then
 	exec "$@"  $DEF_ARGS --port=$MYSQL_SLAVE_PORT
 else
