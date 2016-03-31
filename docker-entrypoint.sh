@@ -250,5 +250,5 @@ EOSQL
 	fi
 fi
 
-exec "$@" 
+exec "$@"  --user=mysql --server-id=$(get_last_octet_from_ip)
 
