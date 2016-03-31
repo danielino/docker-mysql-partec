@@ -10,6 +10,7 @@
 #  - MYSQL_MASTER_ROOT_PASS: the root password for the master server
 #  - MYSQL_MASTER_WAIT_TIME: seconds to wait for the master to come up, default 3seconds
 #  - MYSQL_SETUP_WAIT_TIME: seconds to wait for the current instance to start after setup (default 60seconds)
+#  - MYSQL_SLAVE_PORT: required when deploying slave container
 set -e
 set -m
 #set -x
@@ -250,5 +251,9 @@ EOSQL
 	fi
 fi
 
-exec "$@"  --user=mysql --server-id=$(get_last_octet_from_ip)
+if [ $MYSQL_SLAVE_PORT -gt 0 ]; then
+	exec "$@"  --user=mysql --server-id=$(get_last_octet_from_ip)  --port=$MYSQL_SLAVE_PORT
+else
+	exec "$@"  --user=mysql --server-id=$(get_last_octet_from_ip)
+fi
 
