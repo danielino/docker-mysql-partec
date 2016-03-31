@@ -68,7 +68,7 @@ fi
 
 if [ "$1" = 'mysqld' ]; then
 	# Get config
-	DATADIR="$("$@" --verbose --help --log-bin-index=/tmp/tmp.index 2>/dev/null | awk '$1 == "datadir" { print $2; exit }')"
+	DATADIR="$("$@" --verbose --help 2>/dev/null | awk '$1 == "datadir" { print $2; exit }')"
 	echo "${DATADIR}mysql"
 	if [ ! -d "${DATADIR}mysql" ]; then
 		echo "Datadir non esistente"
@@ -250,6 +250,5 @@ EOSQL
 	fi
 fi
 
-echo "Executing slave"
 exec "$@" 
 
