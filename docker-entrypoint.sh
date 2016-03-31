@@ -58,7 +58,7 @@ restoredb(){
 	# Reset Master before importing GTID dump
 	mysql -uroot -p${MYSQL_ROOT_PASSWORD} -hlocalhost -e 'RESET MASTER;'
 	echo 1>&2 "Importing DB"
-	mysqldbimport --server=root:${MYSQL_ROOT_PASSWORD}@localhost  /tmp/data.sql
+	mysqldbimport --server=root:${MYSQL_ROOT_PASSWORD}@localhost:$MYSQL_SLAVE_PORT  /tmp/data.sql
 	echo 1>&2 "Done"
 }
 
