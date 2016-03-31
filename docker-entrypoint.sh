@@ -251,5 +251,5 @@ EOSQL
 fi
 
 echo "Executing slave"
-exec "$@" --user=mysql --server-id=$(get_last_octet_from_ip)
+exec "$@" 
 
