@@ -58,12 +58,12 @@ restoredb(){
 		echo 1>&2 "Error importing data $(cat /tmp/data.sql)"
 	fi
 	echo 1>&2 "Waiting for the Slave to come up"
-	if  !  waitserver "$MYSQL_SETUP_WAIT_TIME"  -uroot "-p${MYSQL_ROOT_PASSWORD}" -hlocalhost ; then
+	if  !  waitserver "$MYSQL_SETUP_WAIT_TIME"  -uroot "-p${MYSQL_ROOT_PASSWORD}" -hlocalhost:$MYSQL_SLAVE_PORT ; then
 		echo >&2 "Local mysql instance is taking too long to start"
 		exit 1
 	fi
 	# Reset Master before importing GTID dump
-	mysql -uroot -p${MYSQL_ROOT_PASSWORD} -hlocalhost -e 'RESET MASTER;'
+	mysql -uroot -p${MYSQL_ROOT_PASSWORD} -hlocalhost:$MYSQL_SLAVE_PORT -e 'RESET MASTER;'
 	echo 1>&2 "Importing DB"
 	mysqldbimport --server=root:${MYSQL_ROOT_PASSWORD}@localhost:$MYSQL_SLAVE_PORT  /tmp/data.sql
 	echo 1>&2 "Done"
