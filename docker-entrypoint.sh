@@ -58,12 +58,12 @@ restoredb(){
 		echo 1>&2 "Error importing data $(cat /tmp/data.sql)"
 	fi
 	echo 1>&2 "Waiting for the Slave to come up"
-	if  !  waitserver "$MYSQL_SETUP_WAIT_TIME"  -uroot "-p${MYSQL_ROOT_PASSWORD}" -hlocalhost:$MYSQL_SLAVE_PORT ; then
+	if  !  waitserver "$MYSQL_SETUP_WAIT_TIME"  -uroot "-p${MYSQL_ROOT_PASSWORD}" -hlocalhost -P $MYSQL_SLAVE_PORT ; then
 		echo >&2 "Local mysql instance is taking too long to start"
 		exit 1
 	fi
 	# Reset Master before importing GTID dump
-	mysql -uroot -p${MYSQL_ROOT_PASSWORD} -hlocalhost:$MYSQL_SLAVE_PORT -e 'RESET MASTER;'
+	mysql -uroot -p${MYSQL_ROOT_PASSWORD} -hlocalhost -P $MYSQL_SLAVE_PORT -e 'RESET MASTER;'
 	echo 1>&2 "Importing DB"
 	mysqldbimport --server=root:${MYSQL_ROOT_PASSWORD}@localhost:$MYSQL_SLAVE_PORT  /tmp/data.sql
 	echo 1>&2 "Done"
@@ -99,10 +99,10 @@ if [ "$1" = 'mysqld' ]; then
 
 		# Using set -e we should always EXIT_SUCCESS even if nothing is grep'd
 		echo "Running initialize with options ${DEFAULTS_FILE_ARGS}"
-		"$@" --user=mysql --initialize-insecure=on --datadir="$DATADIR"  --server-id=$(get_last_octet_from_ip)
+		"$@" --user=mysql --initialize-insecure=on --datadir="$DATADIR"  --server-id=$(get_unique_server_id)
 		echo 'Finished initialize'
 
-		"$@" --user=mysql --datadir="$DATADIR" --skip-networking  --server-id=$(get_last_octet_from_ip) &
+		"$@" --user=mysql --datadir="$DATADIR" --skip-networking  --server-id=$(get_unique_server_id) &
 
 
 		pid="$!"
@@ -227,15 +227,15 @@ EOSQL
 			# Wait for eg. 10 seconds for the master to come up
 			# do at least one iteration
 			echo >&2 "Waiting for $MYSQL_REPLICA_USER@$MYSQL_MASTER_SERVER"
-			if ! waitserver $MYSQL_MASTER_WAIT_TIME "-u$MYSQL_REPLICA_USER" "-p$MYSQL_REPLICA_PASS" "-h$MYSQL_MASTER_SERVER"; then
+			if ! waitserver $MYSQL_MASTER_WAIT_TIME "-u$MYSQL_REPLICA_USER" "-p$MYSQL_REPLICA_PASS" "-h$MYSQL_MASTER_SERVER -P$MYSQL_MASTER_PORT"; then
 				echo 1>&2 "Master server is unreachable"
 				exit 1
 			fi
 
 			if [ -z "$MYSQL_MASTER_ROOT_PASS" ]; then
 				# Get master position and set it on the slave. NB: MASTER_PORT and MASTER_LOG_POS must not be quoted
-				MasterPosition=$(mysql "-u$MYSQL_REPLICA_USER" "-p$MYSQL_REPLICA_PASS" "-h$MYSQL_MASTER_SERVER" -e "show master status \G" | awk '/Position/ {print $2}')
-				MasterFile=$(mysql  "-u$MYSQL_REPLICA_USER" "-p$MYSQL_REPLICA_PASS" "-h$MYSQL_MASTER_SERVER"   -e "show master status \G"	 | awk '/File/ {print $2}')
+				MasterPosition=$(mysql "-u$MYSQL_REPLICA_USER" "-p$MYSQL_REPLICA_PASS" "-h$MYSQL_MASTER_SERVER -P$MYSQL_MASTER_PORT" -e "show master status \G" | awk '/Position/ {print $2}')
+				MasterFile=$(mysql  "-u$MYSQL_REPLICA_USER" "-p$MYSQL_REPLICA_PASS" "-h$MYSQL_MASTER_SERVER -P$MYSQL_MASTER_PORT"   -e "show master status \G"	 | awk '/File/ {print $2}')
 				"${mysql[@]}" <<- EOSQL
 				CHANGE MASTER TO MASTER_HOST='$MYSQL_MASTER_SERVER',
 				MASTER_PORT=$MYSQL_MASTER_PORT,
@@ -262,6 +262,6 @@ DEF_ARGS="--user=mysql --server-id=$(get_unique_server_id) --log-bin=master-bin 
 if [ $MYSQL_SLAVE_PORT -gt 0 ]; then
 	exec "$@"  $DEF_ARGS --port=$MYSQL_SLAVE_PORT
 else
-	exec "$@"  $DEF_ARGS
+	exec "$@"  $DEF_ARGS --port=$MYSQL_MASTER_PORT
 fi
 
