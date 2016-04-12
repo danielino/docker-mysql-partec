@@ -259,9 +259,10 @@ EOSQL
 fi
 
 DEF_ARGS="--user=mysql --server-id=$(get_unique_server_id) --log-bin=master-bin --relay-log=master-relay-bin --log-slave-updates --relay-log-recovery=1 --master-info-repository=TABLE --relay-log-info-repository=TABLE --gtid-mode=ON --enforce-gtid-consistency --report-host=master --explicit-defaults-for-timestamp --innodb-log-file-size=5M"
+
 if [[ $MYSQL_SLAVE_PORT  && $MYSQL_SLAVE_PORT -gt 0 ]]; then
 	exec "$@"  $DEF_ARGS --port=$MYSQL_SLAVE_PORT
 else
-	exec "$@"  $DEF_ARGS --port=$MYSQL_MASTER_PORT
+	exec "$@"  $DEF_ARGS --port=${MYSQL_MASTER_PORT:-3306}
 fi
 
