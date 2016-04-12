@@ -15,6 +15,17 @@ set -e
 set -m
 #set -x
 
+echo "------------ global variable ---------------"
+printf "%-30s%-20s\n" "GVAR" "VALUE"
+[[ $MYSQL_ROOT_PASSWORD ]] 	&& printf "%-30s%-20s\n" "MYSQL_ROOT_PASSWORD"	"****"
+[[ $MYSQL_REPLICA_USER ]] 	&& printf "%-30s%-20s\n" "MYSQL_REPLICA_USER" 	$MYSQL_REPLICA_USER
+[[ $MYSQL_REPLICA_PASS ]] 	&& printf "%-30s%-20s\n" "MYSQL_REPLICA_PASS" 	"****"
+[[ $MYSQL_MASTER_SERVER ]] 	&& printf "%-30s%-20s\n" "MYSQL_MASTER_SERVER" 	$MYSQL_MASTER_SERVER
+[[ $MYSQL_MASTER_PORT ]] 	&& printf "%-30s%-20s\n" "MYSQL_MASTER_PORT" 	$MYSQL_MASTER_PORT
+[[ $MYSQL_MASTER_ROOT_PASS ]] 	&& printf "%-30s%-20s\n" "MYSQL_ROOT_PASSWORD" 	"****"
+[[ $MYSQL_SLAVE_PORT ]] 	&& printf "%-30s%-20s\n" "MYSQL_SLAVE_PORT" 	$MYSQL_SLAVE_PORT
+
+
 ## Wait for a remote sql server
 waitserver(){
 	local i
@@ -261,8 +272,12 @@ fi
 DEF_ARGS="--user=mysql --server-id=$(get_unique_server_id) --log-bin=master-bin --relay-log=master-relay-bin --log-slave-updates --relay-log-recovery=1 --master-info-repository=TABLE --relay-log-info-repository=TABLE --gtid-mode=ON --enforce-gtid-consistency --report-host=master --explicit-defaults-for-timestamp --innodb-log-file-size=5M"
 
 if [[ $MYSQL_SLAVE_PORT  && $MYSQL_SLAVE_PORT -gt 0 ]]; then
+	echo "starting slave:"
+	echo "        $@ $DEF_ARGS --port=$MYSQL_SLAVE_PORT"
 	exec "$@"  $DEF_ARGS --port=$MYSQL_SLAVE_PORT
 else
+	echo "starting master:"
+	echo "        $@ $DEF_ARGS --port=${MYSQL_MASTER_PORT:-3306}"
 	exec "$@"  $DEF_ARGS --port=${MYSQL_MASTER_PORT:-3306}
 fi
 
