@@ -48,10 +48,8 @@ get_last_octet_from_ip(){
 }
 
 get_unique_server_id(){
-	#it's based on macaddr
-	hwaddr=$(ip link show  |grep link  | head -2 | tail -1 | awk '{print $2}')
-	hwaddr_md5_only_char=$(echo $hwaddr | md5sum | awk '{print $1}' | sed 's/[a-z]//g')
-	echo $hwaddr_md5_only_char | awk '{print substr($1,1,3)}'
+	sha256_hostname=$(sha256sum <(hostname))
+	echo $sha256_hostname | sed 's/[a-z]//g' | awk '{print substr($1,1,5)}'
 }
 
 get_ip(){
